@@ -4,44 +4,44 @@ namespace App\Services;
 
 class OrderBook
 {
-    private static $buyOrders = [];
-    private static $sellOrders = [];
+    private static $compraOrdem = [];
+    private static $vendeOrdem = [];
     
-    // Ativo fixo
-    private static $asset = 'AAPL';
+    // Deixando o ativo da Apple fixo
+    private static $ativo = 'AAPL';
     private static $price = 50.00;
 
-    public static function addBuyOrder($price, $qty)
+    public static function adicionarOrdemCompra($price, $qty)
     {
-        self::$buyOrders[] = ['price' => $price, 'qty' => $qty];
+        self::$compraOrdem[] = ['price' => $price, 'qty' => $qty];
     }
 
-    public static function addSellOrder($price, $qty)
+    public static function adicionarOrdemVenda($price, $qty)
     {
-        self::$sellOrders[] = ['price' => $price, 'qty' => $qty];
+        self::$vendeOrdem[] = ['price' => $price, 'qty' => $qty];
     }
 
-    public static function getBuyOrders()
+    public static function ordemCompra()
     {
-        return self::$buyOrders;
+        return self::$compraOrdem;
     }
 
-    public static function getSellOrders()
+    public static function ordemVenda()
     {
-        return self::$sellOrders;
+        return self::$vendeOrdem;
     }
 
-    public static function updateSellOrders($orders)
+    public static function atualizaOrdemVenda($ordem)
     {
-        self::$sellOrders = $orders;
+        self::$vendeOrdem = $ordem;
     }
 
-    public static function updateBuyOrders($orders)
+    public static function atualizaOrdemCompra($ordem)
     {
-        self::$buyOrders = $orders;
+        self::$compraOrdem = $ordem;
     }
 
-    public static function getAssetPrice()
+    public static function obterPrecoAtivo()
     {
         return self::$price; // Retorna o preço fixo do ativo
     }
