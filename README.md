@@ -1,6 +1,6 @@
 # Sistema de Gerenciamento de Ordens de Compra e Venda
 
-Este projeto é um sistema para gerenciar ordens de compra e venda, desenvolvido em PHP com Laravel. O sistema permite a criação de ordens do tipo "limit" e "market".
+Este projeto gerencia ordens de compra e venda, desenvolvido em PHP com Laravel. O sistema permite a criação de ordens do tipo "limit" e "market", além de fazer o casamento entre elas quando posível, chamado "trade". 
 
 ## Tecnologias
 
