@@ -13,15 +13,15 @@ class ProcessandoOrdens extends Command
     public function handle()
     {
         while (true) {
-            $this->retorna("\n=========  MENU  ==========");
-            $this->retorna("Ativo: AAPL");
-            $this->retorna("Price: 50.00\n");
+            $this->info("\n=========  MENU  ==========");
+            $this->info("Ativo: AAPL");
+            $this->info("Price: 50.00\n");
 
-            $this->retorna("1. Inserir order limit");
-            $this->retorna("2. Inserir order market");
-            $this->retorna("3. Exibir ordens de compra");
-            $this->retorna("4. Exibir ordens de venda");
-            $this->retorna("5. Sair");
+            $this->info("1. Inserir order limit");
+            $this->info("2. Inserir order market");
+            $this->info("3. Exibir ordens de compra");
+            $this->info("4. Exibir ordens de venda");
+            $this->info("5. Sair");
             $choice = $this->ask('Escolha uma opção');
 
             switch ($choice) {
@@ -38,7 +38,7 @@ class ProcessandoOrdens extends Command
                     $this->mostrandoOrdensVenda();
                     break;
                 case 5:
-                    $this->retorna('Saindo...');
+                    $this->info('Saindo...');
                     return;
                 default:
                     $this->error('Opção inválida! Tente novamente.');
@@ -59,14 +59,14 @@ class ProcessandoOrdens extends Command
         if ($side === 'buy') {
             // Adiciona ordem de compra ao livro
             OrderBook::adicionarOrdemCompra($price, $qty);
-            $this->retorna('Order limit de compra adicionada com sucesso.');
+            $this->info('Order limit de compra adicionada com sucesso.');
 
             // Tenta executar a ordem com base nas ordens de venda existentes
             $this->executandoLimitOrder('sell', $price, $qty);
         } elseif ($side === 'sell') {
             // Adiciona ordem de venda ao livro
             OrderBook::adicionarOrdemVenda($price, $qty);
-            $this->retorna('Order limit de venda adicionada com sucesso.');
+            $this->info('Order limit de venda adicionada com sucesso.');
 
             // Tenta executar a ordem com base nas ordens de compra existentes
             $this->executandoLimitOrder('buy', $price, $qty);
@@ -77,15 +77,19 @@ class ProcessandoOrdens extends Command
 
     public function inserindoMarketOrder()
     {
-        $side = $this->ask('Digite o lado (buy/sell)');
+        $side = $this->choice(
+            'Digite o lado (buy/sell)',
+            ['buy', 'sell']
+        );
+
         $qty = $this->ask('Digite a quantidade');
-        $precoMarket = OrderBook::obterPrecoAtivo(); // Preço de mercado fixo (50.00)
+        $precoMarket = OrderBook::obterPrecoAtivo(); 
 
         if ($side === 'buy') {
             // Tenta executar a ordem de compra usando ordens de venda
             $qtySelecionada = $this->executandoTrade('sell', $qty);
 
-            // Se não houver ordens do lado oposto, adiciona a ordem ao livro
+            // Se não houver ordens do lado oposto, adiciona ao livro
             if ($qtySelecionada === 0) {
                 OrderBook::adicionarOrdemCompra($precoMarket, $qty);
             }
@@ -93,28 +97,28 @@ class ProcessandoOrdens extends Command
             // Tenta executar a ordem de venda usando ordens de compra
             $qtySelecionada = $this->executandoTrade('buy', $qty);
 
-            // Se não houver ordens do lado oposto, adiciona a ordem ao livro
+            // Se não houver ordens do lado oposto, adiciona ao livro
             if ($qtySelecionada === 0) {
                 OrderBook::adicionarOrdemVenda($precoMarket, $qty);
             }
         } else {
-            $this->error('Lado inválido! Use "buy" ou "sell".');
+            $this->error('Inválido! Use "buy" ou "sell".');
             return;
         }
 
         // Exibe o trade com o preço de mercado
-        $this->retorna("Trade, price: {$precoMarket}, qty: {$qty}");
+        $this->info("Trade, price: {$precoMarket}, qty: {$qty}");
     }
 
     public function mostrandoOrdensCompra()
     {
         $compraOrdem = OrderBook::ordemCompra();
         if (empty($compraOrdem)) {
-            $this->retorna('Não há ordens de compra.');
+            $this->info('Não há ordens de compra.');
         } else {
-            $this->retorna("Ordens de compra:");
+            $this->info("Ordens de compra:");
             foreach ($compraOrdem as $order) {
-                $this->retorna("Price: {$order['price']}, Qty: {$order['qty']}");
+                $this->info("Price: {$order['price']}, Qty: {$order['qty']}");
             }
         }
     }
@@ -123,18 +127,18 @@ class ProcessandoOrdens extends Command
     {
         $vendeOrdem = OrderBook::ordemVenda();
         if (empty($vendeOrdem)) {
-            $this->retorna('Não há ordens de venda.');
+            $this->info('Não há ordens de venda.');
         } else {
-            $this->retorna("Ordens de venda:");
+            $this->info("Ordens de venda:");
             foreach ($vendeOrdem as $order) {
-                $this->retorna("Price: {$order['price']}, Qty: {$order['qty']}");
+                $this->info("Price: {$order['price']}, Qty: {$order['qty']}");
             }
         }
     }
 
     public function executandoTrade($ladoOposto, $qty)
     {
-        $price = OrderBook::obterPrecoAtivo(); // Preço fixo do ativo (50.00)
+        $price = OrderBook::obterPrecoAtivo(); // Preço fixo do ativo
         $qtySelecionada = 0; // Quantidade preenchida no trade
 
         // Se a ordem for de compra
@@ -149,24 +153,24 @@ class ProcessandoOrdens extends Command
             // Iterar pelas ordens até preencher a quantidade necessária
             foreach ($ordem as $index => $order) {
                 if ($order['qty'] >= $qty) {
-                    // Trade completo
+                    // Trade
                     $qtySelecionada = $qty;
                     $order['qty'] -= $qty;
 
-                    // Remover ordem se a quantidade for 0
+                    // Remove a ordem se a quantidade for 0
                     if ($order['qty'] == 0) {
                         unset($ordem[$index]);
                     }
                     break; // Saímos do loop após preencher a ordem
                 } else {
-                    // Trade parcial
+                    // Trade
                     $qtySelecionada += $order['qty'];
                     $qty -= $order['qty'];
-                    unset($ordem[$index]); // Remover ordem já completamente utilizada
+                    unset($ordem[$index]);
                 }
             }
 
-            // Atualizar o livro de ordens com as ordens restantes
+            // Atualiza o livro de ordens 
             if ($ladoOposto === 'sell') {
                 OrderBook::atualizaOrdemVenda($ordem);
             } else {
@@ -174,12 +178,12 @@ class ProcessandoOrdens extends Command
             }
         }
 
-        // Exibir resultado do trade uma única vez
+        // Exibe o resultado do trade no console
         if ($qtySelecionada > 0) {
-            $this->retorna("Trade, price: {$price}, qty: {$qtySelecionada}");
+            $this->info("Trade, price: {$price}, qty: {$qtySelecionada}");
         }
 
-        // Se não houve trade realizado, registrar a ordem
+        // Se não houve trade realizado, registrar a ordem no livro 
         if ($qtySelecionada === 0 && $qty > 0) {
             if ($ladoOposto === 'sell') {
                 OrderBook::adicionarOrdemCompra($price, $qty);
@@ -200,16 +204,16 @@ class ProcessandoOrdens extends Command
 
         // se não houver ordens do lado oposto, não é possível realizar o trade
         if (empty($ordem)) {
-            $this->retorna("Não há ordens do lado oposto para realizar o trade.");
+            $this->info("Não há ordens do lado oposto para realizar o trade.");
             return;
         }
 
         $qtySelecionada = 0; // Quantidade preenchida no trade
-        $tradePreco = 0; // Preço no qual o trade foi executado
+        $tradePreco = 0; // Preço que o trade foi executado
 
         // Percorre as ordens opostas
         foreach ($ordem as $index => $order) {
-            // Verifica se o preço da ordem oposta é compatível com o limite
+            // Verifica se o preço da ordem oposta é compatível com o limite colocado
             if (($ladoOposto === 'sell' && $order['price'] <= $precoLimite) ||
                 ($ladoOposto === 'buy' && $order['price'] >= $precoLimite)
             ) {
@@ -245,9 +249,9 @@ class ProcessandoOrdens extends Command
         // Mostra o resultado do trade
         if ($qtySelecionada > 0) {
             $this->newLine();
-            $this->retorna("Trade, price: {$tradePreco}, qty: {$qtySelecionada}");
+            $this->info("Trade, price: {$tradePreco}, qty: {$qtySelecionada}");
         } else {
-            $this->retorna("Não foi possível realizar o trade.");
+            $this->info("Não foi possível realizar o trade.");
         }
     }
 }
