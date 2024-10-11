@@ -23,5 +23,6 @@ Para configurar o projeto em sua máquina local, siga os passos abaixo:
 ## 
 
 1. Rode o comando `php artisan iniciar` para iniciar a compra, venda e trade.
+   
 ![print_1](https://github.com/user-attachments/assets/aa455429-2bb2-4f6e-bdc1-4d333cea0910)
 
