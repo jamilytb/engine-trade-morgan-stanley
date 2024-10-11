@@ -139,7 +139,7 @@ class ProcessandoOrdens extends Command
     public function executandoTrade($ladoOposto, $qty)
     {
         $price = OrderBook::obterPrecoAtivo(); // Preço fixo do ativo
-        $qtySelecionada = 0; // Quantidade preenchida no trade
+        $qtySelecionada = 0;
 
         // Se a ordem for de compra
         if ($ladoOposto === 'sell') {
@@ -211,9 +211,9 @@ class ProcessandoOrdens extends Command
         $qtySelecionada = 0; // Quantidade preenchida no trade
         $tradePreco = 0; // Preço que o trade foi executado
 
-        // Percorre as ordens opostas
+        // Verifica as ordens opostas
         foreach ($ordem as $index => $order) {
-            // Verifica se o preço da ordem oposta é compatível com o limite colocado
+            // Verifica se o preço da ordem oposta é compatível com o limite
             if (($ladoOposto === 'sell' && $order['price'] <= $precoLimite) ||
                 ($ladoOposto === 'buy' && $order['price'] >= $precoLimite)
             ) {
