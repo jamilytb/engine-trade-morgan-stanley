@@ -19,3 +19,29 @@ Para configurar o projeto em sua máquina local, siga os passos abaixo:
 3. Clone o repositório com o comando `git clone <URL>`. 
 
 4. Instale as dependências do Composer para que o projeto funcione `composer install`.
+
+## Executando o comando para rodar o projeto
+
+1. Abra o terminal no diretório raiz do projeto.
+
+2. Digite o seguinte comando para iniciar a aplicação:
+
+   ```bash
+   php artisan iniciar
+   
+3. Após executar o comando, o menu abaixo será exibido:
+
+   ![menu](https://github.com/user-attachments/assets/0711f2ae-68e4-4c0c-b855-b4bbcfbda4bb)
+
+## Arquivos e Localização dos Códigos 
+
+Os códigos desenvolvidos estão organizados nos seguintes arquivos: 
+
+**Comando para processar ordens**: `app/Console/Commands/ProcessandoOrdens.php`
+- Este arquivo tem o comando `iniciar`, que executa o programa e roda as ordens de compra e venda com um menu interativo no console.
+  
+**Modelo de Ordens**: `app/Models/Ordem.php`
+- Define a estrutura das ordens de compra e venda no sistema.
+  
+**Service**: `app/Services/OrderBook.php`
+- Aqui tem a lógica para armazenar, atualizar e processar ordens de compra e venda. Esses arquivos juntos implementam a lógica de uma matching engine básica, que processa ordens de compra e venda com base no input do usuário.
