@@ -30,3 +30,5 @@ Para configurar o projeto em sua máquina local, siga os passos abaixo:
    php artisan iniciar
    
 3. Após executar o comando, o menu abaixo será exibido:
+
+   ![menu](https://github.com/user-attachments/assets/0711f2ae-68e4-4c0c-b855-b4bbcfbda4bb)
