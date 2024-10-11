@@ -43,5 +43,5 @@ Os códigos desenvolvidos estão organizados nos seguintes arquivos:
 **Modelo de Ordens**: `app/Models/Ordem.php`
 - Define a estrutura das ordens de compra e venda no sistema.
   
-**Serviço de Livro de Ordens**: `app/Services/OrderBook.php`
-- Contém a lógica para armazenar, atualizar e processar ordens de compra e venda, além de simular a execução das ordens com base no preço do ativo. Esses arquivos juntos implementam a lógica de uma matching engine básica, que processa ordens de compra e venda com base no input do usuário.
+**Service**: `app/Services/OrderBook.php`
+- Aqui tem a lógica para armazenar, atualizar e processar ordens de compra e venda. Esses arquivos juntos implementam a lógica de uma matching engine básica, que processa ordens de compra e venda com base no input do usuário.
