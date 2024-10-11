@@ -20,9 +20,13 @@ Para configurar o projeto em sua máquina local, siga os passos abaixo:
 
 4. Instale as dependências do Composer para que o projeto funcione `composer install`.
 
-## 
+## Executando o comando para rodar o projeto
 
-1. Rode o comando `php artisan iniciar` para iniciar a compra, venda e trade.
+1. Abra o terminal no diretório raiz do projeto.
+
+2. Digite o seguinte comando para iniciar a aplicação:
+
+   ```bash
+   php artisan iniciar
    
-![print_1](https://github.com/user-attachments/assets/aa455429-2bb2-4f6e-bdc1-4d333cea0910)
-
+3. Após executar o comando, o menu abaixo será exibido:
