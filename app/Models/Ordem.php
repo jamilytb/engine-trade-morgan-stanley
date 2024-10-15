@@ -1,48 +1,32 @@
 <?php
 
-namespace App\Services;
+namespace App\Models;
 
-class OrderBook
+class Ordem
 {
-    private static $compraOrdem = [];
-    private static $vendeOrdem = [];
-    
-    // Ativo fixo
-    private static $ativo = 'AAPL';
-    private static $price = 50.00;
+    public $preco;
+    public $quantidade;
 
-    public static function adicionarOrdemCompra($price, $qty)
+    public function __construct($preco = null, $quantidade = null)
     {
-        self::$compraOrdem[] = ['price' => $price, 'qty' => $qty];
+        $this->preco = $preco;
+        $this->quantidade = $quantidade;
     }
 
-    public static function adicionarOrdemVenda($price, $qty)
+    public function atualizar($preco, $quantidade)
     {
-        self::$vendeOrdem[] = ['price' => $price, 'qty' => $qty];
+        $this->preco = $preco;
+        $this->quantidade = $quantidade;
     }
 
-    public static function ordemCompra()
+    public function limpar()
     {
-        return self::$compraOrdem;
+        $this->preco = null;
+        $this->quantidade = null;
     }
 
-    public static function ordemVenda()
+    public function existe()
     {
-        return self::$vendeOrdem;
-    }
-
-    public static function atualizaOrdemVenda($ordem)
-    {
-        self::$vendeOrdem = $ordem;
-    }
-
-    public static function atualizaOrdemCompra($ordem)
-    {
-        self::$compraOrdem = $ordem;
-    }
-
-    public static function obterPrecoAtivo()
-    {
-        return self::$price; // Retorna o preço fixo do ativo
+        return $this->preco !== null && $this->quantidade !== null;
     }
 }
