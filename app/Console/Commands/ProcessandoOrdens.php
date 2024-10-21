@@ -28,13 +28,18 @@ class ProcessandoOrdens extends Command
     public function handle()
     {
         while (true) {
-            $this->info("\n=========  MENU  ==========");
+            // Processa e exibe o livro de ordens como cabeçalho
+            $this->info("\n====================  LIVRO DE ORDENS  =====================\n");
+            $this->processarArquivosTxt();
+
+            // Exibe o menu de opções
+            $this->info("\n====================  MENU  ====================\n");
             $this->info("1. Inserir ordem limit");
             $this->info("2. Inserir ordem market");
             $this->info("3. Exibir ordens de compra");
             $this->info("4. Exibir ordens de venda");
-            $this->info("5. Exibir livro de ordens (TXT)");
             $this->info("6. Sair");
+
             $choice = $this->ask('Escolha uma opção');
 
             switch ($choice) {
@@ -49,9 +54,6 @@ class ProcessandoOrdens extends Command
                     break;
                 case 4:
                     $this->mostrarOrdensVenda();
-                    break;
-                case 5:
-                    $this->processarArquivosTxt();
                     break;
                 case 6:
                     $this->info('Saindo...');
@@ -111,7 +113,6 @@ class ProcessandoOrdens extends Command
             $this->info(sprintf("%-10s %-20s %-20s", ($i + 1), $compra, $venda));
         }
     }
-
     // Método para inserir uma ordem limit
     public function inserirLimitOrder()
     {
@@ -134,49 +135,52 @@ class ProcessandoOrdens extends Command
     public function inserirMarketOrder()
     {
         $side = $this->choice('Digite o lado (buy/sell)', ['buy', 'sell']);
-        $qty = $this->ask('Digite a quantidade'); // Solicita a quantidade
-        $preco = $this->ask('Digite o preço'); // Pergunta o preço
+        $qty = (int)$this->ask('Digite a quantidade'); // Solicita apenas a quantidade
 
         if ($side === 'buy') {
-            $novaOrdem = [
-                'id' => $this->proximoIdCompra++, // Incrementa o próximo ID de compra
-                'quantidade' => (int)$qty,
-                'preco' => (float)$preco,
-            ];
-
-            // Adiciona a nova ordem ao arquivo
-            $caminhoCompras = storage_path('app/compras.txt');
-            $ordensCompra = $this->lerArquivoOrdens($caminhoCompras);
-            $ordensCompra[] = $novaOrdem; // Adiciona a nova ordem
-
-            // Reescreve as ordens no arquivo
-            $conteudo = '';
-            foreach ($ordensCompra as $ordem) {
-                $conteudo .= "{$ordem['id']} - {$ordem['quantidade']} @ {$ordem['preco']}\n";
-            }
-
-            file_put_contents($caminhoCompras, $conteudo);
-            $this->info("Ordem de mercado de compra adicionada: {$novaOrdem['quantidade']} @ {$novaOrdem['preco']}");
-        } elseif ($side === 'sell') {
-            $novaOrdem = [
-                'id' => $this->proximoIdVenda++, // Incrementa o próximo ID de venda
-                'quantidade' => (int)$qty,
-                'preco' => (float)$preco,
-            ];
-
-            // Adiciona a nova ordem ao arquivo
+            // Lê as ordens de venda do arquivo vendas.txt
             $caminhoVendas = storage_path('app/vendas.txt');
             $ordensVenda = $this->lerArquivoOrdens($caminhoVendas);
-            $ordensVenda[] = $novaOrdem; // Adiciona a nova ordem
 
-            // Reescreve as ordens no arquivo
-            $conteudo = '';
-            foreach ($ordensVenda as $ordem) {
-                $conteudo .= "{$ordem['id']} - {$ordem['quantidade']} @ {$ordem['preco']}\n";
+            if (empty($ordensVenda)) {
+                $this->info('Não há ordens de venda disponíveis.');
+                return;
             }
 
+            $quantidadeRestante = $qty; // Quantidade que ainda precisa ser comprada
+
+            // Processa a compra a partir das vendas no menor preço
+            foreach ($ordensVenda as $index => $venda) {
+                if ($quantidadeRestante > 0) {
+                    $quantidadeVenda = $venda['quantidade'];
+                    $precoVenda = $venda['preco'];
+
+                    if ($quantidadeVenda <= $quantidadeRestante) {
+                        // Comprar toda a quantidade desta venda
+                        $this->info("Comprado {$quantidadeVenda} ações a {$precoVenda}");
+                        $quantidadeRestante -= $quantidadeVenda;
+                        unset($ordensVenda[$index]); // Remove a ordem de venda que foi completamente preenchida
+                    } else {
+                        // Comprar parcialmente e atualizar o restante
+                        $this->info("Comprado {$quantidadeRestante} ações a {$precoVenda}");
+                        $ordensVenda[$index]['quantidade'] = $quantidadeVenda - $quantidadeRestante;
+                        $quantidadeRestante = 0; // Tudo foi comprado
+                    }
+                } else {
+                    break; // Já comprou tudo que precisava
+                }
+            }
+
+            // Reescreve o arquivo vendas.txt com as ordens restantes
+            $conteudo = '';
+            foreach ($ordensVenda as $vendaRestante) {
+                $conteudo .= "{$vendaRestante['quantidade']} @ {$vendaRestante['preco']}\n";
+            }
             file_put_contents($caminhoVendas, $conteudo);
-            $this->info("Ordem de mercado de venda adicionada: {$novaOrdem['quantidade']} @ {$novaOrdem['preco']}");
+
+            $this->info("Ordem de mercado de compra de {$qty} ações realizada.");
+        } else {
+            $this->info('Operação não suportada para ordens de venda do tipo market.');
         }
     }
 
