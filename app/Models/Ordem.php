@@ -7,6 +7,7 @@ class Ordem
     public $preco;
     public $quantidade;
     public $id; // Adicione esta linha
+    public $historico = []; // Armazena o histórico de ordens de mercado
 
     public function __construct($preco = null, $quantidade = null, $id = null) // Inclua o ID no construtor
     {
@@ -32,5 +33,15 @@ class Ordem
     public function existe()
     {
         return $this->preco !== null && $this->quantidade !== null;
+    }
+
+    public function adicionarHistorico($quantidade, $preco)
+    {
+        $this->historico[] = ['quantidade' => $quantidade, 'preco' => $preco];
+    }
+
+    public function mostrarHistorico()
+    {
+        return $this->historico;
     }
 }
