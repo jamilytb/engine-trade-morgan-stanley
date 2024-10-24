@@ -147,7 +147,7 @@ class ProcessandoOrdens extends Command
             // Armazena a ordem limit de venda
             $this->ordensLimitVenda[] = [
                 'id' => $this->proximoIdVenda,
-                'preco' => $price,
+                'precFo' => $price,
                 'quantidade' => $qty,
             ];
             $this->info("Ordem limit de venda adicionada. ID: {$this->proximoIdVenda}");
@@ -155,105 +155,101 @@ class ProcessandoOrdens extends Command
         }
     }
     
-    // Método para inserir uma ordem de mercado e executar o trade imediatamente
+    // Método para inserir uma ordem de mercado
     public function inserirMarketOrder()
-    {
-        $side = $this->choice('Digite o lado (buy/sell)', ['buy', 'sell']);
-        $qtyDesejada = (int)$this->ask('Digite a quantidade'); // Solicita a quantidade
+{
+    $side = $this->choice('Digite o lado (buy/sell)', ['buy', 'sell']);
+    $qtyDesejada = (int)$this->ask('Digite a quantidade');
 
-        if ($side === 'buy') {
-            // Ordenar as ordens de venda pelo preço mais baixo
-            usort($this->ordensVenda, function ($a, $b) {
-                return $a['preco'] <=> $b['preco'];
-            });
+    if ($side === 'buy') {
+        // Ordenar as ordens de venda pelo preço mais baixo
+        usort($this->ordensVenda, function ($a, $b) {
+            return $a['preco'] <=> $b['preco'];
+        });
 
-            $quantidadeRestante = $qtyDesejada;
-            $totalComprado = 0;
+        $quantidadeRestante = $qtyDesejada;
+        $totalComprado = 0;
+        $precoMedio = 0;
 
-            foreach ($this->ordensVenda as $index => &$ordemVenda) {
-                if ($quantidadeRestante <= 0) {
-                    break;
-                }
-
-                if ($ordemVenda['quantidade'] <= $quantidadeRestante) {
-                    // Executa o trade para a quantidade total da ordem de venda
-                    $this->info("Comprado {$ordemVenda['quantidade']} ações a {$ordemVenda['preco']}");
-                    $totalComprado += $ordemVenda['quantidade'];
-                    $quantidadeRestante -= $ordemVenda['quantidade'];
-                    // Remove a ordem de venda do array
-                    unset($this->ordensVenda[$index]);
-                } else {
-                    // Executa o trade para a quantidade parcial
-                    $this->info("Comprado {$quantidadeRestante} ações a {$ordemVenda['preco']}");
-                    $totalComprado += $quantidadeRestante;
-                    $ordemVenda['quantidade'] -= $quantidadeRestante;
-                    $quantidadeRestante = 0;
-                }
+        foreach ($this->ordensVenda as $index => &$ordemVenda) {
+            if ($quantidadeRestante <= 0) {
+                break;
             }
 
-            // Atualiza a carteira em memória
-            if ($totalComprado > 0) {
-                if (isset($this->carteira['AAPL'])) {
-                    $this->carteira['AAPL'] += $totalComprado;
-                } else {
-                    $this->carteira['AAPL'] = $totalComprado;
-                }
-
-                // Armazena a ordem market buy apenas se alguma ação foi comprada
-                $this->ordensCompra[] = [
-                    'id' => $this->proximoIdCompra,
-                    'quantidade' => $totalComprado,
-                    'preco' => 'mercado',
-                ];
-                $this->proximoIdCompra++; // Incrementa o próximo ID de compra
+            if ($ordemVenda['quantidade'] <= $quantidadeRestante) {
+                // Compra total da ordem de venda
+                $this->info("Comprado {$ordemVenda['quantidade']} ações a {$ordemVenda['preco']}");
+                $totalComprado += $ordemVenda['quantidade'];
+                $precoMedio = $ordemVenda['preco'];
+                $quantidadeRestante -= $ordemVenda['quantidade'];
+                unset($this->ordensVenda[$index]); // Remove a ordem de venda completamente
             } else {
-                $this->info("Nenhuma ação foi comprada.");
+                // Compra parcial da ordem de venda
+                $this->info("Comprado {$quantidadeRestante} ações a {$ordemVenda['preco']}");
+                $totalComprado += $quantidadeRestante;
+                $precoMedio = $ordemVenda['preco'];
+                $ordemVenda['quantidade'] -= $quantidadeRestante; // Subtrai a quantidade comprada
+                $quantidadeRestante = 0; // Não há mais quantidade restante
+            }
+        }
+
+        // Atualiza a carteira em memória
+        if ($totalComprado > 0) {
+            // Verifica se o ativo já está na carteira
+            if (isset($this->carteira['AAPL'])) {
+                // Se já existir, atualiza a quantidade
+                $this->carteira['AAPL']['quantidade'] += $totalComprado;
+                // Atualiza o preço com o último preço de compra
+                $this->carteira['AAPL']['preco'] = $precoMedio;
+            } else {
+                // Se não existir, adiciona o ativo à carteira
+                $this->carteira['AAPL'] = [
+                    'quantidade' => $totalComprado,
+                    'preco' => $precoMedio
+                ];
             }
 
-        } elseif ($side === 'sell') {
-            // Verifica se tem ações suficientes para vender
-            if (!isset($this->carteira['AAPL']) || $this->carteira['AAPL'] < $qtyDesejada) {
-                $this->error("Quantidade insuficiente para vender.");
-                return;
-            }
-
-            $this->carteira['AAPL'] -= $qtyDesejada; // Subtrai a quantidade da carteira
-
-            // Armazena a ordem market sell
-            $this->ordensVenda[] = [
-                'id' => $this->proximoIdVenda,
-                'quantidade' => $qtyDesejada,
+            // Armazena a ordem market buy apenas se alguma ação foi comprada
+            $this->ordensCompra[] = [
+                'id' => $this->proximoIdCompra,
+                'quantidade' => $totalComprado,
                 'preco' => 'mercado',
             ];
-            $this->info("Ordem market sell inserida. ID: {$this->proximoIdVenda}");
-            $this->proximoIdVenda++; // Incrementa o próximo ID de venda
+            $this->proximoIdCompra++;
+        } else {
+            $this->info("Nenhuma ação foi comprada.");
         }
-    }
-
-    public function mostrarOrdensCompra()
-{
-    $this->info("\n====================  ORDENS DE COMPRA  =====================\n");
-    
-    // Verifica se há ordens de compra limit e market
-    if (empty($this->ordensLimitCompra) && empty($this->ordensCompra)) {
-        $this->info("Nenhuma ordem de compra encontrada.");
-        return;
-    }
-
-    $this->info(sprintf("%-10s %-20s %-20s", "ID", "Quantidade", "Preço"));
-    $this->info(str_repeat("=", 60));
-
-    // Exibe ordens limit de compra
-    foreach ($this->ordensLimitCompra as $ordem) {
-        $this->info(sprintf("%-10s %-20s %-20s", $ordem['id'], $ordem['quantidade'], $ordem['preco']));
-    }
-
-    // Exibe ordens de compra market
-    foreach ($this->ordensCompra as $ordem) {
-        $this->info(sprintf("%-10s %-20s %-20s", $ordem['id'], $ordem['quantidade'], $ordem['preco']));
+    } elseif ($side === 'sell') {
+        // Lógica de venda
     }
 }
     
+// Método para mostrar as ordens de compra
+public function mostrarOrdensCompra()
+{
+    $this->info("\n====================  ORDENS DE COMPRA (CARTEIRA)  =====================\n");
+
+    // Verifica se há ações compradas na carteira
+    if (empty($this->carteira)) {
+        $this->info("Nenhuma ação comprada encontrada.");
+        return;
+    }
+
+    // Exibe as ações armazenadas na carteira com as novas colunas
+    $this->info(sprintf("%-10s %-10s %-10s", "Ativo", "QTY", "Price"));
+    $this->info(str_repeat("=", 40));
+
+    foreach ($this->carteira as $ticker => $detalhes) {
+        $this->info(sprintf("%-10s %-10s %-10s", $ticker, $detalhes['quantidade'], $detalhes['preco']));
+    }
+
+    // Verifica se há ordens de compra pendentes
+    if (empty($this->ordensCompra)) {
+        $this->info("\nNenhuma ordem de compra pendente.");
+        return;
+    }
+}
+
     // Método para mostrar ordens de venda
     public function mostrarOrdensVenda()
     {
@@ -261,17 +257,6 @@ class ProcessandoOrdens extends Command
         if (empty($this->ordensLimitVenda) && empty($this->ordensVenda)) {
             $this->info("Nenhuma ordem de venda encontrada.");
             return;
-        }
-
-        $this->info(sprintf("%-10s %-20s %-20s", "ID", "Quantidade", "Preço"));
-        $this->info(str_repeat("=", 60));
-
-        foreach ($this->ordensLimitVenda as $ordem) {
-            $this->info(sprintf("%-10s %-20s %-20s", $ordem['id'], $ordem['quantidade'], $ordem['preco']));
-        }
-
-        foreach ($this->ordensVenda as $ordem) {
-            $this->info(sprintf("%-10s %-20s %-20s", $ordem['id'], $ordem['quantidade'], $ordem['preco']));
         }
     }
 
