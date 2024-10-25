@@ -43,11 +43,13 @@ class ProcessandoOrdensV1 extends Command
             $this->exibirOrdensVenda();
 
             $this->info("\n====================  MENU  ====================\n");
-            $this->info("1. Inserir ordem limit");
-            $this->info("2. Inserir ordem market");
-            $this->info("3. Exibir ordens de compra");
-            $this->info("4. Exibir ordens de venda");
-            $this->info("5. Sair");
+            $this->info("1. Inserir limit order");
+            $this->info("2. Inserir market order");
+            $this->info("3. Exibir histórico de ordens de compra");
+            $this->info("4. Exibir histórico de ordens de venda");
+            $this->info("5. Cancelar ordem");
+            $this->info("6. Alterar ordem");
+            $this->info("7. Sair");
 
             $escolha = $this->ask('Escolha uma opção');
 
@@ -65,6 +67,14 @@ class ProcessandoOrdensV1 extends Command
                     $this->exibirHistorico('sell');
                     break;
                 case 5:
+                    $id = $this->ask("Informe o ID da ordem que deseja cancelar");
+                    $this->cancelarOrdem($id);
+                    break;
+                case 6:
+                    $id = $this->ask("Informe o ID da ordem que deseja alterar");
+                    $this->alterarOrdem($id);
+                    break;
+                case 7:
                     $this->info("Saindo...");
                     return Command::SUCCESS;
                 default:
@@ -106,7 +116,7 @@ class ProcessandoOrdensV1 extends Command
         ];
 
         $this->adicionarOrdem($ordem);
-        $this->info("Ordem limit inserida com sucesso!");
+        $this->info("Limit order inserida com sucesso!");
     }
 
     protected function inserirOrdemMarket(): void
@@ -127,7 +137,7 @@ class ProcessandoOrdensV1 extends Command
         ];
 
         $this->processarOrdemMarket($ordem);
-        $this->info("Ordem market processada com sucesso!");
+        $this->info("Market order processada com sucesso!");
     }
 
     protected function processarOrdemMarket(object $ordem): void
@@ -167,7 +177,7 @@ class ProcessandoOrdensV1 extends Command
                 break;
             }
 
-            // Remover a quantidade da ordem de venda
+            // Remove a quantidade da ordem de venda
             $quantidadePreenchida = min($ordem->quantidade, $sellOrder->quantidade);
             $ordem->quantidade -= $quantidadePreenchida;
             $sellOrder->quantidade -= $quantidadePreenchida;
@@ -240,39 +250,46 @@ class ProcessandoOrdensV1 extends Command
         $this->sellOrders = $this->sellOrders->sortBy('preco')->values();
     }
 
-    // Exibe as ordens de compra no console
-    protected function exibirOrdensCompra(): void
+    public function exibirOrdensCompra()
     {
-        $this->info("\n===== Ordens de Compra =====\n");
-        foreach ($this->buyOrders as $order) {
-            $this->line(" - Quantidade: {$order->quantidade}, Preço: {$order->preco}");
+        // Ordena as ordens de compra pelo preço em ordem decrescente
+        $ordensCompraOrdenadas = $this->buyOrders->sortByDesc('preco');
+
+        $this->info("===== Ordens de Compra =====");
+
+        foreach ($ordensCompraOrdenadas as $ordem) {
+            $this->info(" - Quantidade: {$ordem->quantidade}, Preço: {$ordem->preco}");
         }
+
+        $this->info("=====================");
     }
 
-    // Exibe as ordens de venda no console
-    protected function exibirOrdensVenda(): void
+    public function exibirOrdensVenda()
     {
-        $this->info("\n===== Ordens de Venda =====\n");
-        foreach ($this->sellOrders as $order) {
-            $this->line(" - Quantidade: {$order->quantidade}, Preço: {$order->preco}");
+        // Ordena as ordens de venda pelo preço em ordem crescente
+        $ordensVendaOrdenadas = $this->sellOrders->sortBy('preco');
+
+        $this->info("===== Ordens de Venda =====");
+
+        foreach ($ordensVendaOrdenadas as $ordem) {
+            $this->info(" - Quantidade: {$ordem->quantidade}, Preço: {$ordem->preco}");
         }
+
+        $this->info("=====================");
     }
 
-    protected function exibirHistorico(string $lado): void
+    public function exibirHistorico()
     {
-        $this->info("\n===== Histórico =====\n");
-        foreach ($this->minhasCompras as $trade) {
+        // Ordena as ordens pelo preço em ordem decrescente
+        $historicoOrdenado = $this->minhasCompras->sortByDesc('preco');
 
-            // mostra apenas os trades do lado informado
-            if ($trade['lado'] !== $lado) {
+        $this->info("===== Histórico =====");
 
-                continue;
-            }
-
-
-
-            $this->line(" {$trade['id']} {$trade['tipo']} {$trade['lado']} {$trade['quantidade']} @ {$trade['preco']}");
+        foreach ($historicoOrdenado as $ordem) {
+            $this->info(" {$ordem['id']} {$ordem['tipo']} {$ordem['lado']} {$ordem['quantidade']} @ {$ordem['preco']}");
         }
+
+        $this->info("=====================");
     }
 
     // Guarda a compra no histórico (Collection minhasCompras)
@@ -285,5 +302,104 @@ class ProcessandoOrdensV1 extends Command
             'quantidade' => $quantidade,
             'preco' => $preco
         ]);
+    }
+
+    protected function atualizarHistorico(string $id, $ordemAlteravel): void
+    {
+        // Verifica se a ordem existe no histórico
+        $ordemExistente = $this->minhasCompras->firstWhere('id', $id);
+
+        if ($ordemExistente) {
+            // Atualiza os dados da ordem
+            $this->minhasCompras = $this->minhasCompras->transform(function ($ordem) use ($ordemExistente, $ordemAlteravel) {
+                if ($ordem['id'] === $ordemExistente['id']) {
+                    // Retorna a ordem atualizada
+                    return [
+                        'id' => $ordem['id'],
+                        'tipo' => $ordem['tipo'],
+                        'lado' => $ordem['lado'],
+                        'preco' => $ordemAlteravel->preco, // Novo preço
+                        'quantidade' => $ordemAlteravel->quantidade, // Nova quantidade
+                    ];
+                }
+                return $ordem; // Retorna a ordem original se não for a que está sendo alterada
+            });
+
+            $this->info("Ordem com ID {$id} atualizada com sucesso.");
+        } else {
+            $this->error("Ordem com ID {$id} não encontrada no histórico.");
+        }
+    }
+
+    // Implementa o método de cancelamento
+    protected function cancelarOrdem(string $id): void
+    {
+        // Verifica se a ordem é do tipo limit e não está no histórico de ordens executadas (minhasCompras)
+        $ordemCancelavel = $this->buyOrders->firstWhere('id', $id) ?? $this->sellOrders->firstWhere('id', $id);
+
+        if ($ordemCancelavel && $ordemCancelavel->tipo === 'limit' && !$this->minhasCompras->contains('id', $id)) {
+            // Remove a ordem da lista de ordens de compra
+            $this->buyOrders = $this->buyOrders->reject(function ($order) use ($id) {
+                return $order->id === $id;
+            });
+
+            // Remove a ordem da lista de ordens de venda
+            $this->sellOrders = $this->sellOrders->reject(function ($order) use ($id) {
+                return $order->id === $id;
+            });
+
+            $this->info("Ordem com ID {$id} cancelada com sucesso.");
+        } else {
+            $this->error("A ordem com ID {$id} não pode ser cancelada. Somente ordens limit não executadas são canceláveis.");
+        }
+    }
+
+    // Implementa o método de alteração de ordem
+    protected function alterarOrdem(string $id): void
+    {
+        // Verifica se a ordem existe no histórico
+        $ordemAlteravel = $this->minhasCompras->firstWhere('id', $id);
+
+        // Certifique-se de que a ordem foi encontrada
+        if ($ordemAlteravel) {
+            // Converte a ordem para um objeto, se necessário
+            if (is_array($ordemAlteravel)) {
+                $ordemAlteravel = (object) $ordemAlteravel;
+            }
+
+            // Verifica se é do tipo limit
+            if ($ordemAlteravel->tipo === 'limit') {
+                // Exibe a ordem encontrada
+                $this->info("Ordem encontrada: ID {$id}, Tipo: {$ordemAlteravel->tipo}, Lado: {$ordemAlteravel->lado}, Preço: {$ordemAlteravel->preco}, Quantidade: {$ordemAlteravel->quantidade}");
+
+                // Pergunta ao usuário o que deseja alterar
+                $campo = $this->ask("Deseja alterar 'preço' ou 'quantidade'?");
+
+                switch ($campo) {
+                    case 'preço':
+                        $novoPreco = $this->ask("Informe o novo preço");
+                        $ordemAlteravel->preco = (float)$novoPreco;
+                        $this->info("Preço da ordem {$id} alterado para {$novoPreco}.");
+                        break;
+
+                    case 'quantidade':
+                        $novaQuantidade = $this->ask("Informe a nova quantidade");
+                        $ordemAlteravel->quantidade = (int)$novaQuantidade;
+                        $this->info("Quantidade da ordem {$id} alterada para {$novaQuantidade}.");
+                        break;
+
+                    default:
+                        $this->error("Opção inválida. Informe 'preço' ou 'quantidade'.");
+                        return;
+                }
+
+                // Atualiza a ordem no histórico após a alteração
+                $this->atualizarHistorico($id, $ordemAlteravel);
+            } else {
+                $this->error("A ordem com ID {$id} não pode ser alterada. Somente ordens limit não executadas são alteráveis.");
+            }
+        } else {
+            $this->error("A ordem com ID {$id} não foi encontrada.");
+        }
     }
 }
