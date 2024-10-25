@@ -7,7 +7,7 @@ use App\Models\Ordem;
 
 class ProcessandoOrdens extends Command
 {
-    protected $signature = 'iniciar';
+    protected $signature = 'X';
     protected $description = 'Processa ordens de compra ou venda';
 
     protected $ordemCompra;
