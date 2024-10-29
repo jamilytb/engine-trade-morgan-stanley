@@ -31,7 +31,7 @@ Para configurar o projeto em sua máquina local, siga os passos abaixo:
    
 3. Após executar o comando, o menu abaixo será exibido:
 
-   ![menu](https://github.com/user-attachments/assets/0711f2ae-68e4-4c0c-b855-b4bbcfbda4bb)
+   ![menu](https://github.com/user-attachments/assets/71ddd0fb-a01c-44d5-996f-f78bcb4522d1)
 
 ## Arquivos e Localização dos Códigos 
 
