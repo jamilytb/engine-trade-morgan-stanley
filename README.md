@@ -40,5 +40,5 @@ Os códigos desenvolvidos estão organizados nos seguintes arquivos:
 **Comando para processar ordens**: `app/Console/Commands/ProcessandoOrdens.php`
 - Este arquivo tem o comando `iniciar`, que executa o programa e roda as ordens de compra e venda com um menu interativo no console.
   
-**Modelo de Ordens**: `app/Models/Ordem.php`
+**Modelo de Ordens**: `app/Models/Order.php` e `app/Models/OrderService`
 - Define a estrutura das ordens de compra e venda no sistema.
